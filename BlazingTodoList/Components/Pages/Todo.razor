@@ -1,0 +1,77 @@
+﻿@page "/todo"
+@using BlazingTodoList.Components.Account
+@using BlazingTodoList.Data
+@using BlazingTodoList.Model
+@using Microsoft.AspNetCore.Identity
+@inject HttpClient HttpClient
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityUserAccessor UserAccessor
+@inject NavigationManager NavigationManager
+
+<div>
+    @if (items == null)
+    {
+        <text>Loading...</text>
+    }
+    else if (!items.Any())
+    {
+        <h2>No Todo Items found</h2>
+        <text>insert something to add an item here</text>
+        @if (user is not null)
+        {
+            <text>your user id is @user.Id</text>
+        }
+    }
+    else
+    {
+        <div>
+            @foreach (var item in items)
+            {
+                <div>
+                    @item.ItemName
+                    <br />
+                    @item.ItemDesc
+                    <br />
+                    @if (item.Completed)
+                    {
+                        <text>item not completed</text>
+                    }
+                    else
+                    {
+                        <text>item is completed</text>
+                    }
+                    <br />
+                    @item.UserId
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    List<TodoItem> items = new List<TodoItem>();
+
+    private ApplicationUser user = default!;
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+
+        if (user is not null)
+        {
+            try
+            {
+                items = await HttpClient.GetFromJsonAsync<List<TodoItem>>($"{NavigationManager.BaseUri}items/{user.Id}");
+
+            }
+            catch (Exception e)
+            {
+                throw ;
+            }
+        }
+    }
+     
+}
